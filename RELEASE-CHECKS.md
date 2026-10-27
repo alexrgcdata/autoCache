@@ -1,0 +1,11 @@
+# Release checks · October 27, 2026
+
+- 14 frontend tests passed, including key selection/fallback, immutable mapping state, sample import/activation, content search beyond page one, no-network sample behavior, POST search privacy and CSRF requests.
+- TypeScript production build passed. Standalone build explicitly replaces Node environment variables with production constants; packaging rejects unresolved environment references.
+- PHP 8.4.25: routing/source URL, administrator session, contact transport and OData adapter fixture checks passed. The new record-search suite exercised authentication/CSRF, prepared queries, active scope, field projection, names/emails/numbers, literal wildcards, exact large IDs and oversized rows using SQLite in memory. No real mail, FileMaker or external database was contacted.
+- Edge browser: the static online-demo build was served at `/autocache-demo/` to test subdirectory assets and its content policy. Demo login, schema search, key choice, draft save, import, activation, content search and record details worked. The new autoCache charcoal/orange/violet theme and personal/RGC service callout were visually inspected.
+- Responsive checks used measured CSS viewports of 390, 767 and 1440 pixels. No document-level horizontal overflow was observed; wide records scroll inside their table. Schema and field panes stay bounded. Record details receive keyboard focus and become visible when opened. This is Chromium testing, not a physical Safari/iOS check.
+- Standalone file built with embedded CSS/JS and a content policy denying network requests. The browser tool refused local file URLs; **double-click DEMO.html verification remains a recipient check**. This restriction was not bypassed.
+- Release files come from an explicit allow-list. Local config, runtime data, logs and node_modules are excluded. Pattern checks and per-file SHA256 hashes are included; this is not a comprehensive secret/security audit.
+
+Connected fresh installation, MySQL migrations on a clean server, source import/activation and hosted business-key lifecycle were not exercised in this pass. See REVIEW.md for the acceptance checklist. No upload, email or deployment was performed.

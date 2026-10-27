@@ -1,0 +1,71 @@
+/* autoCache identity. Semantic tokens inspired by shadcn's neutral + accent
+   approach, without adding a framework or changing the deployment model. */
+:root {
+  --background: #141416;
+  --foreground: #f4f4f5;
+  --card: #1d1d21;
+  --muted: #a1a1aa;
+  --border: #37373f;
+  --primary: #fb923c;
+  --primary-foreground: #211207;
+  --accent: #c4b5fd;
+  --accent-soft: #ddd6fe;
+  --destructive: #fca5a5;
+  --line: var(--border);
+  --panel: var(--card);
+  --canvas: var(--background);
+  color: var(--foreground);
+  background: var(--background);
+}
+body { background: radial-gradient(ellipse at 95% 0%, #6d28d912, transparent 45%), var(--background); }
+input, select, textarea { background: #18181c; border-color: #484850; color: var(--foreground); }
+input[type="checkbox"], progress { accent-color: var(--primary); }
+button:focus-visible, a:focus-visible, summary:focus-visible, input:focus-visible, select:focus-visible, [tabindex]:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }
+.brandmark { color: var(--primary-foreground); background: var(--primary); border-radius: 10px; }
+.brand > span:not(.brandmark) { color: var(--primary); font-weight: 600; }
+.avatar { color: var(--accent); background: #c4b5fd18; }
+.workspace-nav > button.active { background: #fb923c0c; border-color: #fb923c66; color: var(--foreground); }
+.workspace-nav > button.active > span:first-child { color: var(--primary); }
+.workspace-nav > button > span:first-child { color: var(--muted); }
+.workspace-nav > button:hover:not(.active) { background: #ffffff05; border-color: #484850; }
+.summary-grid { background: linear-gradient(115deg,#26262c,#1d1d21); }
+.button.primary { color: var(--primary-foreground); background: var(--primary); border-color: var(--primary); }
+.button.primary:hover:not(:disabled) { background: #fdba74; }
+.button.secondary { color: var(--foreground); background: #27272d; border-color: #484850; }
+.table-row.current { background: #fb923c12; border-left-color: var(--primary); }
+.field.selected, .field.checked { background: #fb923c0c; }
+.identity-picker { background: #fb923c04; border-color: #fb923c44; }
+.key-chip { color: var(--primary); background: #fb923c09; border-color: #fb923c44; }
+.key-chip.fallback { color: var(--accent); background: #c4b5fd0a; border-color: #c4b5fd3d; }
+.quick-help { background: #c4b5fd05; }
+.identity-help { background: #14141633; }
+.quick-help summary { color: var(--accent); }
+.identity-warning { color: #fdba74; border-color: var(--primary); background: #fb923c09; }
+.schema-field.included { color: #fdba74; background: #fb923c0a; }
+.schema-branches, .schema-field::before { border-color: #55505c; }
+.records-table thead th { background: #29282e; color: #fdba74; }
+.records-table tbody tr:hover { background: #c4b5fd07; }
+.sample-banner { background: #241f30; color: #e5ddff; border-bottom: 1px solid #c4b5fd35; }
+.sample-banner span { color: #c3bbd2; }
+.dot { background: var(--primary); box-shadow: none; }
+.step, .step-number { color: var(--primary-foreground); background: var(--primary); border-color: var(--primary); }
+.alert { color: var(--foreground); background: #242229; border-color: #c4b5fd55; }
+.alert.error { color: var(--destructive); background: #331e21; border-color: #fca5a555; }
+.tree, .schema-branches { border-color: var(--border); }
+.tree-fields > span { background: #28252a; border-color: #45404a; color: #e4e4e7; }
+.json-preview { background: #161518; color: #fdba74; }
+.services-callout { margin: 20px 38px 0; padding: 28px 30px; border: 1px solid #fb923c42; border-radius: 12px; display: grid; grid-template-columns: 1.5fr 1fr; gap: 32px; background: linear-gradient(125deg,#fb923c09,#c4b5fd07); }
+.services-callout h2 { font-size: 23px; margin: 8px 0 12px; letter-spacing: -.5px; }
+.services-callout p { margin: 0; max-width: 620px; font-size: 13px; line-height: 1.8; }
+.service-links { display: flex; flex-direction: column; justify-content: center; gap: 10px; }
+.service-links a { text-align: center; text-decoration: none; }
+.service-links .text-button { font-size: 12px; }
+.community-footer strong, .community-footer strong a { color: var(--foreground); }
+.community-footer > div > a { color: var(--primary); }
+.services-callout .eyebrow { color: var(--primary); }
+.table-list, .field-grid, .records-scroll, .tree, .schema-scroll { scrollbar-color: #62606b #1d1d21; }
+@media (max-width: 640px) {
+  .services-callout { grid-template-columns: 1fr; margin: 12px 16px 0; padding: 22px; gap: 22px; }
+  .services-callout h2 { font-size: 21px; }
+  .button { min-height: 44px; }
+}

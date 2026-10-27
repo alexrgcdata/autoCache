@@ -1,0 +1,2 @@
+autoCache — created by Alex Seidler (https://alexseidler.dev), in collaboration with RGC Data Solutions (https://rgcdata.com).
+React, React DOM and Scheduler license notices are in licenses/.

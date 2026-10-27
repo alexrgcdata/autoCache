@@ -1,0 +1,117 @@
+# Script name: rgcCache Capture Transaction
+# Script parameter: native OnWindowTransaction JSON, or the guide's manual sample.
+# This script changes variables only. It never commits or edits FileMaker records.
+# Failure retains the raw input in $$rgcCache_RejectedInput. Stop source edits on failure.
+
+Set Error Capture [ On ]
+Allow User Abort [ Off ]
+Set Variable [ $raw ; Value: Get ( ScriptParameter ) ]
+Perform Script [ Specified: From list ; "rgcCache Settings" ; Parameter: "" ]
+Set Variable [ $settings ; Value: Get ( ScriptResult ) ]
+Set Variable [ $file ; Value: JSONGetElement ( $settings ; "file" ) ]
+Set Variable [ $batchSize ; Value: JSONGetElement ( $settings ; "batchSize" ) ]
+Set Variable [ $url ; Value: JSONGetElement ( $settings ; "base" ) & "/sync" ]
+Set Variable [ $error ; Value: "" ]
+
+If [ JSONGetElementType ( $raw ; "" ) <> JSONObject ]
+    Set Variable [ $error ; Value: "The transaction parameter is not a JSON object." ]
+End If
+If [ IsEmpty ( $file ) or PatternCount ( $file ; "'" ) or PatternCount ( $file ; "\\" ) or PatternCount ( $file ; Char ( 13 ) ) or PatternCount ( $file ; Char ( 10 ) ) ]
+    Set Variable [ $error ; Value: "Set a supported filename in rgcCache Settings (no apostrophe, backslash or newline)." ]
+End If
+If [ $batchSize < 1 or $batchSize > 25 or Int ( $batchSize ) <> $batchSize ]
+    Set Variable [ $error ; Value: "Settings need an integer batchSize from 1 to 25." ]
+End If
+If [ not IsEmpty ( $$rgcCache_Pending ) and JSONGetElementType ( $$rgcCache_Pending ; "" ) <> JSONArray ]
+    Set Variable [ $error ; Value: "Pending delivery storage is invalid. Preserve it and investigate; do not reset it." ]
+End If
+
+# Build all new deliveries locally before appending any to the session queue.
+Set Variable [ $new ; Value: "[]" ]
+If [ IsEmpty ( $error ) ]
+    Set Variable [ $filePath ; Value: "['" & $file & "']" ]
+    Set Variable [ $fileFound ; Value: 0 ]
+    Set Variable [ $fileKeys ; Value: JSONListKeys ( $raw ; "" ) ]
+    Set Variable [ $f ; Value: 1 ]
+    Loop
+        Exit Loop If [ $f > ValueCount ( $fileKeys ) ]
+        If [ Exact ( GetValue ( $fileKeys ; $f ) ; $file ) ]
+            Set Variable [ $fileFound ; Value: 1 ]
+        End If
+        Set Variable [ $f ; Value: $f + 1 ]
+    End Loop
+    If [ $fileFound ]
+        If [ JSONGetElementType ( $raw ; $filePath ) <> JSONObject ]
+            Set Variable [ $error ; Value: "Configured file entry must contain a table object." ]
+        Else
+            Set Variable [ $tableKeys ; Value: JSONListKeys ( $raw ; $filePath ) ]
+            If [ IsEmpty ( $tableKeys ) ]
+                Set Variable [ $error ; Value: "The transaction contains no table entries." ]
+            End If
+        End If
+    End If
+End If
+
+# Iterate the tables actually present in this transaction. PHP/MySQL's active
+# mapping is the only positive table allow-list.
+Set Variable [ $t ; Value: 1 ]
+Loop
+    Exit Loop If [ not IsEmpty ( $error ) or not $fileFound or $t > ValueCount ( $tableKeys ) ]
+    Set Variable [ $table ; Value: GetValue ( $tableKeys ; $t ) ]
+    If [ IsEmpty ( $table ) or PatternCount ( $table ; "'" ) or PatternCount ( $table ; "\\" ) or PatternCount ( $table ; Char ( 13 ) ) or PatternCount ( $table ; Char ( 10 ) ) ]
+        Set Variable [ $error ; Value: "Each transaction table must have a supported name (no apostrophe, backslash or newline)." ]
+        Exit Loop If [ 1 ]
+    End If
+    Set Variable [ $path ; Value: $filePath & "['" & $table & "']" ]
+    Set Variable [ $rows ; Value: JSONGetElement ( $raw ; $path ) ]
+    If [ JSONGetElementType ( $rows ; "" ) <> JSONArray ]
+        Set Variable [ $error ; Value: "Transaction table entry must be an array: " & $table ]
+        Exit Loop If [ 1 ]
+    End If
+    Set Variable [ $r ; Value: 0 ]
+    Set Variable [ $batch ; Value: "[]" ]
+    Set Variable [ $n ; Value: 0 ]
+    Set Variable [ $count ; Value: ValueCount ( JSONListKeys ( $rows ; "" ) ) ]
+    Loop
+        Exit Loop If [ $r >= $count or not IsEmpty ( $error ) ]
+        Set Variable [ $row ; Value: JSONGetElement ( $rows ; "[" & $r & "]" ) ]
+        Set Variable [ $op ; Value: JSONGetElement ( $row ; "[0]" ) ]
+        Set Variable [ $id ; Value: GetAsText ( JSONGetElement ( $row ; "[1]" ) ) ]
+        If [ JSONGetElementType ( $row ; "" ) <> JSONArray or ValueCount ( JSONListKeys ( $row ; "" ) ) <> 3 or not ( Exact ( $op ; "New" ) or Exact ( $op ; "Modified" ) or Exact ( $op ; "Deleted" ) ) or not ( JSONGetElementType ( $row ; "[1]" ) = JSONString or JSONGetElementType ( $row ; "[1]" ) = JSONNumber ) or IsEmpty ( $id ) or not Exact ( Filter ( $id ; "0123456789" ) ; $id ) or Left ( $id ; 1 ) = "0" or Length ( $id ) > 19 or GetAsNumber ( $id ) > 9223372036854775807 ]
+            Set Variable [ $error ; Value: "Invalid operation or internal record ID in " & $table & " at index " & $r & "." ]
+            Exit Loop If [ 1 ]
+        End If
+        # Preserve exact ID as text. Context is deliberately empty: PHP fetches the fields.
+        Set Variable [ $cleanRow ; Value: JSONSetElement ( "[]" ; [ "[0]" ; $op ; JSONString ] ; [ "[1]" ; $id ; JSONString ] ; [ "[2]" ; "" ; JSONString ] ) ]
+        Set Variable [ $batch ; Value: JSONSetElement ( $batch ; "[" & $n & "]" ; $cleanRow ; JSONArray ) ]
+        Set Variable [ $n ; Value: $n + 1 ]
+        Set Variable [ $r ; Value: $r + 1 ]
+        If [ $n = $batchSize or $r = $count ]
+            Set Variable [ $body ; Value: JSONSetElement ( "{}" ; $path ; $batch ; JSONArray ) ]
+            Set Variable [ $delivery ; Value: JSONSetElement ( "{}" ; [ "id" ; Get ( UUID ) ; JSONString ] ; [ "url" ; $url ; JSONString ] ; [ "body" ; $body ; JSONString ] ) ]
+            Set Variable [ $new ; Value: JSONSetElement ( $new ; "[" & ValueCount ( JSONListKeys ( $new ; "" ) ) & "]" ; $delivery ; JSONObject ) ]
+            Set Variable [ $batch ; Value: "[]" ]
+            Set Variable [ $n ; Value: 0 ]
+        End If
+    End Loop
+    Set Variable [ $t ; Value: $t + 1 ]
+End Loop
+
+If [ not IsEmpty ( $error ) ]
+    Set Variable [ $$rgcCache_RejectedInput ; Value: $raw ]
+    Set Variable [ $$rgcCache_LastResult ; Value: JSONSetElement ( "{}" ; [ "state" ; "capture_failed" ; JSONString ] ; [ "message" ; $error ; JSONString ] ) ]
+    Show Custom Dialog [ "rgcCache: stop test edits" ; $error & " The source change is already committed. Keep this file open and preserve $$rgcCache_RejectedInput for investigation." ]
+    Exit Script [ Text Result: $$rgcCache_LastResult ]
+End If
+
+If [ IsEmpty ( $$rgcCache_Pending ) ]
+    Set Variable [ $$rgcCache_Pending ; Value: "[]" ]
+End If
+Set Variable [ $i ; Value: 0 ]
+Loop
+    Exit Loop If [ $i >= ValueCount ( JSONListKeys ( $new ; "" ) ) ]
+    Set Variable [ $$rgcCache_Pending ; Value: JSONSetElement ( $$rgcCache_Pending ; "[" & ValueCount ( JSONListKeys ( $$rgcCache_Pending ; "" ) ) & "]" ; JSONGetElement ( $new ; "[" & $i & "]" ) ; JSONObject ) ]
+    Set Variable [ $i ; Value: $i + 1 ]
+End Loop
+Perform Script [ Specified: From list ; "rgcCache Send Pending" ; Parameter: "" ]
+Exit Script [ Text Result: Get ( ScriptResult ) ]

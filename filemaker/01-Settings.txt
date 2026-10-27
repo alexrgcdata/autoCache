@@ -1,0 +1,16 @@
+# Script name: rgcCache Settings
+# Enter these as ordinary FileMaker Script Workspace steps.
+# Replace the token placeholder privately with the EXISTING private/config.php webhook_token.
+# Do not run this script by itself with Script Debugger exposing its result/token.
+
+Set Variable [ $base ; Value: "https://YOUR-SERVER/autocache/api/v1" ]
+Set Variable [ $token ; Value: "PASTE_EXISTING_WEBHOOK_TOKEN_HERE" ]
+Set Variable [ $file ; Value: "YOUR_FILE_NAME" ]
+Set Variable [ $tables ; Value: JSONSetElement ( "[]" ; "[0]" ; "YOUR_TABLE_NAME" ; JSONString ) ]
+Exit Script [ Text Result: JSONSetElement ( "{}" ;
+    [ "base" ; $base ; JSONString ] ;
+    [ "token" ; $token ; JSONString ] ;
+    [ "file" ; $file ; JSONString ] ;
+    [ "tables" ; $tables ; JSONArray ] ;
+    [ "batchSize" ; 25 ; JSONNumber ]
+) ]

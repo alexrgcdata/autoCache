@@ -1,0 +1,10 @@
+/private/config.php
+/private/config.*.php
+!/private/config.example.php
+/admin/node_modules/
+/.release-build/
+/release/
+*.log
+/tests/runtime/
+/.env
+/.env.*

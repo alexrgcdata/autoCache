@@ -1,0 +1,90 @@
+# Script name: rgcCache Send Pending
+# Run this script again to retry. Do NOT rerun Capture with the same transaction.
+# Queue is session memory only. No FileMaker outbox table or scheduled work.
+
+Set Error Capture [ On ]
+Allow User Abort [ Off ]
+If [ $$rgcCache_Sending ]
+    Exit Script [ Text Result: "Already sending; pending deliveries retained." ]
+End If
+If [ IsEmpty ( $$rgcCache_Pending ) or Exact ( $$rgcCache_Pending ; "[]" ) ]
+    Set Variable [ $$rgcCache_LastResult ; Value: "{\"state\":\"idle\"}" ]
+    Exit Script [ Text Result: $$rgcCache_LastResult ]
+End If
+If [ JSONGetElementType ( $$rgcCache_Pending ; "" ) <> JSONArray ]
+    Show Custom Dialog [ "rgcCache: stop test edits" ; "Pending delivery storage is invalid. Keep this file open and preserve the variable for investigation." ]
+    Exit Script [ Text Result: "Invalid pending storage" ]
+End If
+Perform Script [ Specified: From list ; "rgcCache Settings" ; Parameter: "" ]
+Set Variable [ $settings ; Value: Get ( ScriptResult ) ]
+Set Variable [ $token ; Value: JSONGetElement ( $settings ; "token" ) ]
+Set Variable [ $configuredURL ; Value: JSONGetElement ( $settings ; "base" ) & "/sync" ]
+If [ Length ( $token ) < 32 or Exact ( $token ; "PASTE_EXISTING_WEBHOOK_TOKEN_HERE" ) or PatternCount ( $token ; Char ( 13 ) ) or PatternCount ( $token ; Char ( 10 ) ) or PatternCount ( $token ; " " ) ]
+    Show Custom Dialog [ "rgcCache settings" ; "Enter the existing webhook token in rgcCache Settings, then run rgcCache Send Pending. All deliveries are retained." ]
+    Exit Script [ Text Result: "Token needs configuration" ]
+End If
+Set Variable [ $$rgcCache_Sending ; Value: 1 ]
+Set Variable [ $sent ; Value: 0 ]
+Set Variable [ $stop ; Value: 0 ]
+
+# At most three HTTP requests per invocation. Remaining entries are never discarded.
+Loop
+    Exit Loop If [ $stop or $sent >= 3 or ValueCount ( JSONListKeys ( $$rgcCache_Pending ; "" ) ) = 0 ]
+    Set Variable [ $entry ; Value: JSONGetElement ( $$rgcCache_Pending ; "[0]" ) ]
+    Set Variable [ $id ; Value: JSONGetElement ( $entry ; "id" ) ]
+    Set Variable [ $url ; Value: JSONGetElement ( $entry ; "url" ) ]
+    Set Variable [ $body ; Value: JSONGetElement ( $entry ; "body" ) ]
+    If [ not Exact ( $url ; $configuredURL ) or IsEmpty ( $id ) or JSONGetElementType ( $body ; "" ) <> JSONObject ]
+        Set Variable [ $$rgcCache_LastResult ; Value: "{\"state\":\"pending_entry_or_endpoint_mismatch\"}" ]
+        Set Variable [ $stop ; Value: 1 ]
+        Exit Loop If [ 1 ]
+    End If
+    Set Variable [ $response ; Value: "" ]
+    Set Variable [ $headers ; Value: "" ]
+    Set Variable [ $curl ; Value:
+        "--request POST --connect-timeout 10 --max-time 35 --show-error" &
+        " --header " & Quote ( "Content-Type: application/json" ) &
+        " --header " & Quote ( "Authorization: Bearer " & $token ) &
+        " --header " & Quote ( "Idempotency-Key: " & $id ) &
+        " --header " & Quote ( "Expect:" ) &
+        " --data-binary @$body --dump-header $headers"
+    ]
+    Insert from URL [ Select ; With dialog: Off ; Target: $response ; $url ; Verify SSL Certificates ; cURL options: $curl ]
+    # This MUST immediately follow Insert from URL. Capture both values in one evaluation.
+    Set Variable [ $transport ; Value: Let ( [ e = Get ( LastError ) ; d = Get ( LastErrorDetail ) ] ; JSONSetElement ( "{}" ; [ "fmError" ; e ; JSONNumber ] ; [ "detail" ; d ; JSONString ] ) ) ]
+
+    # Read the LAST HTTP status line, allowing proxy/100-Continue header blocks.
+    Set Variable [ $lines ; Value: Substitute ( $headers ; [ Char ( 13 ) & Char ( 10 ) ; Char ( 13 ) ] ; [ Char ( 10 ) ; Char ( 13 ) ] ) ]
+    Set Variable [ $http ; Value: 0 ]
+    Set Variable [ $h ; Value: 1 ]
+    Loop
+        Exit Loop If [ $h > ValueCount ( $lines ) ]
+        Set Variable [ $line ; Value: GetValue ( $lines ; $h ) ]
+        If [ Left ( $line ; 5 ) = "HTTP/" ]
+            Set Variable [ $http ; Value: GetAsNumber ( Middle ( $line ; Position ( $line ; " " ; 1 ; 1 ) + 1 ; 3 ) ) ]
+        End If
+        Set Variable [ $h ; Value: $h + 1 ]
+    End Loop
+    Set Variable [ $$rgcCache_LastResult ; Value: JSONSetElement ( "{}" ; [ "delivery_id" ; $id ; JSONString ] ; [ "http" ; $http ; JSONNumber ] ; [ "transport" ; $transport ; JSONObject ] ; [ "response" ; $response ; JSONString ] ) ]
+    Set Variable [ $ok ; Value: JSONGetElement ( $transport ; "fmError" ) = 0 and $http = 200 and JSONGetElementType ( $response ; "" ) = JSONObject and Exact ( JSONGetElement ( $response ; "state" ) ; "done" ) and Exact ( JSONGetElement ( $response ; "delivery_id" ) ; $id ) ]
+    If [ not $ok ]
+        Set Variable [ $stop ; Value: 1 ]
+    Else
+        # Save exact bytes for the optional duplicate test, then remove only the acknowledged head.
+        Set Variable [ $$rgcCache_LastCompleted ; Value: $entry ]
+        Set Variable [ $$rgcCache_Pending ; Value: JSONDeleteElement ( $$rgcCache_Pending ; "[0]" ) ]
+        Set Variable [ $sent ; Value: $sent + 1 ]
+        If [ JSONGetElementType ( $response ; "warning" ) <> JSONNull ]
+            # Current PHP responses always include warning:null or a warning string.
+            Set Variable [ $$rgcCache_LastWarning ; Value: $$rgcCache_LastResult ]
+            Show Custom Dialog [ "rgcCache warning: inspect before more edits" ; "PHP committed delivery " & $id & " but reported a warning (or an unexpected warning value). " & JSONGetElement ( $response ; "warning" ) & " See $$rgcCache_LastWarning. Replaying a completed delivery will not repair a missing source record." ]
+            Set Variable [ $stop ; Value: 1 ]
+        End If
+    End If
+End Loop
+Set Variable [ $$rgcCache_Sending ; Value: "" ]
+Set Variable [ $remaining ; Value: ValueCount ( JSONListKeys ( $$rgcCache_Pending ; "" ) ) ]
+If [ $remaining > 0 ]
+    Show Custom Dialog [ "rgcCache: pending deliveries" ; $remaining & " delivery batch(es) remain. The FileMaker changes are already saved. Stop test edits and keep this file open. Inspect $$rgcCache_LastResult, fix the cause if needed, then run rgcCache Send Pending. Do not rerun Capture or change the saved delivery IDs/bodies." ]
+End If
+Exit Script [ Text Result: $$rgcCache_LastResult ]
