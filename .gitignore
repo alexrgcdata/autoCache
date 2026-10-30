@@ -8,3 +8,9 @@
 /tests/runtime/
 /.env
 /.env.*
+
+# Private FileMaker exports may contain tokens or customer details.
+/scripts/*.pdf
+*.fmxmlsnippet
+*.clipboard.bin
+/filemaker-current-private/

@@ -6,7 +6,7 @@ This is the standalone **autoCache** PHP/MySQL cache plus React administrator. I
 
 User intent: a useful, editable free community preview with its own charcoal/orange/violet personality and existing treeview, approachable primary-key selection, password-free isolated demo, clear Alex Seidler and RGC Data Solutions credit, and practical handoff documentation.
 
-Latest direction: product name **autoCache**; no green. Keep the charcoal/orange/violet theme and the visible custom-integration service callout for both RGC Data and Alex. The public repository is https://github.com/alexrgcdata/autoCache. Keep its app link visible. Use the autoCache-deployment package for the connected application: only public/ belongs in the web root. The separate online-demo folder is sample-only. Read DEPLOYMENT.md before FTP. The working checkout remains named rgcCache, and PHP/database identifiers deliberately remain compatible. Do not reintroduce images, cached containers or notification panels in this pass.
+Latest direction: product name **autoCache**; no green. Keep the charcoal/orange/violet theme and the visible custom-integration service callout for both RGC Data and Alex. The public repository is https://github.com/alexrgcdata/autoCache. Keep its app link visible. Use the autoCache-deployment package for the connected application: only public/ belongs in the web root. The separate online-demo folder is sample-only. Read DEPLOYMENT.md before FTP. The canonical sanitized public source is the autoCache checkout; rgcCache is the older local working folder. PHP/database identifiers deliberately remain compatible. Do not reintroduce images, cached containers or notification panels in this pass.
 
 ## Implemented in this pass
 

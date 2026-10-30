@@ -56,6 +56,10 @@ The endpoint is `POST <base_path>/api/v1/sync`, with `Content-Type: application/
 
 The sender uses Insert from URL with time limits. It can delay the FileMaker script/UI while sending; it is not an invisible asynchronous watcher. Its queue lives in session variables and is lost when the session closes. The PHP inbox can retry only deliveries it actually received. Direct Data API/OData writes need explicit notifications; this trigger does not provide universal coverage.
 
+Installing these listings does not wire the trigger or instrument other writers automatically. Inventory the write paths your solution uses, including client edits, scripted edits, imports, server scripts and API integrations. Verify which paths produce the expected transaction JSON in your FileMaker version and explicitly notify the others. Do not claim a path is covered until a disposable change reaches the cache with the expected values.
+
+When a delivery fails, preserve the session and inspect the reported result before making more test edits. Retry with **rgcCache Send Pending**, retaining the saved delivery UUID and body. Do not rerun Capture for the same transaction or clear its pending variable to hide the error. If the session or a notification is lost, reconcile the source and cache; PHP cannot recover an event that never reached its inbox. This preview does not include an automated reconciliation job.
+
 ## 5. Read and verify
 
 The administrator's **Cached records** tab searches selected field values across the chosen active table, with 25-record pages and read-only details. It does not query live FileMaker. Search is case-insensitive and treats wildcard characters literally. Empty search browses by numeric internal ID. Legacy all-fields mappings must be converted to explicit selections before content search; at most 512 selected fields are searched. Large scans may time out; this is not a full-text index.
