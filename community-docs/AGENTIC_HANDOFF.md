@@ -1,5 +1,30 @@
 # Agent handoff · autoCache community 0.3.1
 
+## Current checkpoint: October 30, 2026
+
+Canonical checkout: `C:\Users\agsei\Desktop\Projects\autoCache`, branch `main`. This existing `AGENTIC_HANDOFF.md` is the root handoff (the requested lowercase spelling resolves to the same file on Windows). Keep the original standalone product separate from later company integrations. Portfolio code and deployment remain owned by PROJECT MANAGER; this product chat must not edit that checkout.
+
+The latest completed product-documentation checkpoint before this handoff update is [8e497e0025fba8ee1e84308bbdbe6d73885506c5](https://github.com/alexrgcdata/autoCache/commit/8e497e0025fba8ee1e84308bbdbe6d73885506c5), pushed to [main](https://github.com/alexrgcdata/autoCache/tree/main). It rewrote the README, clarified manual script installation and delivery recovery, added private-export ignore rules, synchronized community documentation and updated the branch manifest. Use Git history for the commit containing this handoff update; it does not introduce another product version.
+
+The fixed [v0.3.1 prerelease](https://github.com/alexrgcdata/autoCache/releases/tag/v0.3.1) remains at [239162594141bad087a947b35f08f0aebfe7658f](https://github.com/alexrgcdata/autoCache/commit/239162594141bad087a947b35f08f0aebfe7658f). [Deployment ZIP](https://github.com/alexrgcdata/autoCache/releases/download/v0.3.1/autoCache-deployment-0.3.1.zip) and [original source ZIP](https://github.com/alexrgcdata/autoCache/archive/239162594141bad087a947b35f08f0aebfe7658f.zip) endpoints returned HTTP 200 during the October 30 audit. Runtime source, prebuilt assets and all three supplied script listings remain unchanged from that original commit. No release tag or ZIP was replaced, relabeled or newly published. Current branch documentation differs from the fixed release; use each artifact's own manifest.
+
+### Verification already completed
+
+October 30 checks passed: 14 frontend tests, TypeScript production build, standalone demo build, all five included PHP suites using PHP 8.4.25, syntax checks for 26 PHP files, all 105 branch-manifest entries, README local links and matching root/community documentation copies. PHP record-search tests used SQLite in memory; OData checks used fixtures and contact checks used a mock transport. Earlier responsive browser evidence is recorded in RELEASE-CHECKS.md, not repeated during this source-documentation pass.
+
+The production-dependency audit reported zero vulnerabilities; the full audit flagged two high-severity development dependency packages, Vite 8.3.0 and source-map-js. Those pins were left unchanged in the original-product documentation pass. XAMPP PHP 8.0 is unsupported; the documented minimum is PHP 8.3. No live FileMaker/MySQL acceptance, production database operations or hosting deployment was performed.
+
+### Remaining limits and next steps
+
+The honest status remains **Community preview v0.3.1**. Fresh installation, actual OData connectivity, import/activation, every relevant source write path, create/update/key-change/delete identity behavior, duplicate and interrupted delivery, lost-session reconciliation and MySQL/MariaDB SQL time limits require an explicitly authorized disposable test environment. Do not start those operations without one.
+
+The three FileMaker scripts require manual installation and wiring. Direct Data API/OData writes need explicit notification instrumentation. Sending is synchronous; pending source deliveries live in session memory and disappear when the session closes. PHP can retry only notifications it received. There is no freshness guarantee, universal automatic observation, durable source outbox, two-way sync, image/container cache or historical before/after log.
+
+Private current-database script preservation/comparison is separate and incomplete. Preserve existing local exports without publishing, committing, packaging or logging their contents. Do not replace the original supplied scripts with current private variants. No project-wide software license has been selected; preserve visibility, credit and dependency licenses.
+
+The next documentation-only action is complete once this handoff and its manifest are pushed. Do not repeat unchanged installs, tests or builds for this handoff. Future maintenance should first scope dependency updates in a separate tested change, or obtain an authorized test environment for connected acceptance. Keep one worker on this product, do not create duplicate servers/watchers or persistent monitors, and request a heavy-check slot from PROJECT MANAGER before expensive work. No heavy checks were needed on resume, so no RAM/CPU attribution is claimed.
+
+
 ## Start here
 
 This is the standalone **autoCache** PHP/MySQL cache plus React administrator. It is not a marketing website, OpenBridge/FM Explorer, or the separate FileMaker Change Bridge webhook scaffold. Confirm the current folder contains `private/src/sync.php` and `admin/src/App.tsx` before editing. Read START-HERE.md, PROJECT-GUIDE.md, INSTALLATION.md and REVIEW.md.
